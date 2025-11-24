@@ -6,6 +6,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import connectDB from "./config/db.js";
+import moment from "moment-timezone";
 
 import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
@@ -37,8 +38,11 @@ const authLimiter = rateLimit({
 app.use("/api/admin/login", authLimiter);
 app.use("/api/user/login", authLimiter);
 
+// 🟢 DB Connect (with India timezone logging)
 await connectDB();
+console.log("⏳ Timezone:", moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A"));
 
+// Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -47,21 +51,30 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/enquiry", enquiryRoutes);
 app.use("/api/sliders", sliderRoutes);
 
+// Default
 app.get("/", (_req, res) => res.send("✅ API is running..."));
+
+// Health check time in IST
 app.get("/health", (_req, res) =>
-  res.json({ status: "OK", time: new Date().toISOString() })
+  res.json({
+    status: "OK",
+    timeIST: moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A"),
+  })
 );
 
+// 404 Handler
 app.use((req, res) =>
-  res
-    .status(404)
-    .json({ message: `Route not found: ${req.method} ${req.originalUrl}` })
+  res.status(404).json({
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+  })
 );
 
+// Error Handler
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: "Internal server error" });
 });
 
+// Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server on :${PORT}`));
