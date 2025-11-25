@@ -109,3 +109,55 @@ export const logoutAll = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Change password (protected)
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "currentPassword and newPassword are required." });
+    }
+
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 8 characters long." });
+    }
+
+    // req.user.sub is assumed to be set by requireAuth middleware
+    const admin = await Admin.findById(req.user.sub).select(
+      "+password +tokenVersion"
+    );
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const ok = await bcrypt.compare(currentPassword, admin.password);
+    if (!ok) {
+      return res.status(400).json({ message: "Current password is incorrect." });
+    }
+
+    const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    admin.password = hash;
+
+    // bump tokenVersion so all old tokens become invalid
+    admin.tokenVersion += 1;
+
+    await admin.save();
+
+    // issue a fresh token so frontend can stay logged in
+    const token = signJwt(admin);
+
+    return res.json({
+      message: "Password updated successfully.",
+      token,
+    });
+  } catch (err) {
+    console.error("changePassword error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
