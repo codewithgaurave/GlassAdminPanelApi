@@ -15,6 +15,7 @@ import offerRoutes from "./routes/offerRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import enquiryRoutes from "./routes/enquiryRoutes.js";
 import sliderRoutes from "./routes/sliderRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/offers", offerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/enquiry", enquiryRoutes);
 app.use("/api/sliders", sliderRoutes);
+app.use("/api/dashboard", dashboardRoutes); 
 
 // Default
 app.get("/", (_req, res) => res.send("✅ API is running..."));
