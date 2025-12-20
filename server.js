@@ -17,6 +17,12 @@ import enquiryRoutes from "./routes/enquiryRoutes.js";
 import sliderRoutes from "./routes/sliderRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 
+// User routes
+import userRoutes from "./routes/userRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
+import wishlistRoutes from "./routes/wishlistRoutes.js";
+import userOrderRoutes from "./routes/userOrderRoutes.js";
+
 const app = express();
 
 app.use(helmet());
@@ -38,6 +44,8 @@ const authLimiter = rateLimit({
 
 app.use("/api/admin/login", authLimiter);
 app.use("/api/user/login", authLimiter);
+app.use("/api/users/login", authLimiter);
+app.use("/api/users/register", authLimiter);
 
 // 🟢 DB Connect (with India timezone logging)
 await connectDB();
@@ -51,7 +59,13 @@ app.use("/api/offers", offerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/enquiry", enquiryRoutes);
 app.use("/api/sliders", sliderRoutes);
-app.use("/api/dashboard", dashboardRoutes); 
+app.use("/api/dashboard", dashboardRoutes);
+
+// User routes
+app.use("/api/users", userRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/user-orders", userOrderRoutes); 
 
 // Default
 app.get("/", (_req, res) => res.send("✅ API is running..."));
