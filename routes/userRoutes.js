@@ -5,6 +5,7 @@ import {
   loginUser,
   getProfile,
   updateProfile,
+  getAddresses,
   addAddress,
   updateAddress,
   deleteAddress
@@ -22,6 +23,7 @@ router.get("/profile", authenticateUser, getProfile);
 router.put("/profile", authenticateUser, updateProfile);
 
 // Address management
+router.get("/addresses", authenticateUser, getAddresses);
 router.post("/addresses", authenticateUser, addAddress);
 router.put("/addresses/:addressId", authenticateUser, updateAddress);
 router.delete("/addresses/:addressId", authenticateUser, deleteAddress);

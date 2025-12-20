@@ -156,6 +156,19 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// Get All Addresses
+export const getAddresses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.sub);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ addresses: user.addresses });
+  } catch (err) {
+    console.error("getAddresses error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Add Address
 export const addAddress = async (req, res) => {
   try {
