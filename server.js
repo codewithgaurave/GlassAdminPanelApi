@@ -16,6 +16,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import enquiryRoutes from "./routes/enquiryRoutes.js";
 import sliderRoutes from "./routes/sliderRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import blogRoutes from "./routes/blogRoutes.js";
 
 // User routes
 import userRoutes from "./routes/userRoutes.js";
@@ -60,6 +61,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/enquiry", enquiryRoutes);
 app.use("/api/sliders", sliderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/blogs", blogRoutes);
 
 // User routes
 app.use("/api/users", userRoutes);
