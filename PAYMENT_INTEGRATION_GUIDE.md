@@ -1,22 +1,3 @@
-# Razorpay Payment Integration Guide
-
-## 🚀 Setup Instructions
-
-### 1. Install Dependencies
-```bash
-cd server
-npm install razorpay crypto
-```
-
-### 2. Update Environment Variables
-Add your Razorpay credentials to `.env`:
-```
-RAZORPAY_KEY_ID=your_actual_key_id_here
-RAZORPAY_KEY_SECRET=your_actual_key_secret_here
-```
-
-### 3. API Endpoints Created
-
 #### Payment APIs:
 - `POST /api/payment/create-order` - Create Razorpay order
 - `POST /api/payment/verify` - Verify payment & create order
@@ -209,18 +190,3 @@ const processPayment = async () => {
 1. **Payment Initiated** → `status: "pending"`, `paymentStatus: "pending"`
 2. **Payment Success** → `status: "confirmed"`, `paymentStatus: "paid"`
 3. **Payment Failed** → Order not created, user notified
-
-## 🎯 Next Steps
-
-1. Replace placeholder credentials with actual Razorpay keys
-2. Test with Razorpay test cards
-3. Implement frontend payment UI
-4. Add order confirmation emails
-5. Set up webhooks for payment status updates
-
-## 📞 Support
-
-For Razorpay integration issues:
-- Check Razorpay dashboard for payment logs
-- Verify webhook signatures
-- Monitor server logs for errors

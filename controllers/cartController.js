@@ -137,3 +137,32 @@ export const clearCart = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Get Cart Total for Payment
+export const getCartTotal = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user.sub }).populate("items.product");
+    
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    let totalAmount = 0;
+    cart.items = cart.items.filter(item => {
+      if (!item.product || !item.product.isActive) return false;
+      
+      const itemTotal = (item.product.finalPrice + item.addOnPrice) * item.quantity;
+      totalAmount += itemTotal;
+      return true;
+    });
+
+    res.json({ 
+      totalAmount,
+      totalItems: cart.items.reduce((sum, item) => sum + item.quantity, 0),
+      items: cart.items
+    });
+  } catch (err) {
+    console.error("getCartTotal error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
