@@ -5,16 +5,18 @@ import {
   addToCart,
   updateCartItem,
   removeFromCart,
-  clearCart
+  clearCart,
+  getCartTotal
 } from "../controllers/cartController.js";
-import { authenticateUser } from "../middleware/userAuth.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // All cart routes require authentication
-router.use(authenticateUser);
+router.use(requireAuth);
 
 router.get("/", getCart);
+router.get("/total", getCartTotal);
 router.post("/add", addToCart);
 router.put("/item/:itemId", updateCartItem);
 router.delete("/item/:itemId", removeFromCart);

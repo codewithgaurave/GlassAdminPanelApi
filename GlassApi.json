@@ -130,6 +130,46 @@
       }
     },
     "addressManagement": {
+      "getAddresses": {
+        "method": "GET",
+        "url": "/users/addresses",
+        "description": "Get all user addresses",
+        "headers": {
+          "Authorization": "Bearer <token>"
+        },
+        "response": {
+          "success": {
+            "status": 200,
+            "body": {
+              "addresses": [
+                {
+                  "_id": "address_id_1",
+                  "name": "John Doe",
+                  "phone": "9876543210",
+                  "addressLine1": "123 Main Street",
+                  "addressLine2": "Near City Mall",
+                  "city": "Mumbai",
+                  "state": "Maharashtra",
+                  "pincode": "400001",
+                  "addressType": "home",
+                  "isDefault": true
+                },
+                {
+                  "_id": "address_id_2",
+                  "name": "John Doe Office",
+                  "phone": "9876543210",
+                  "addressLine1": "456 Business Park",
+                  "city": "Mumbai",
+                  "state": "Maharashtra",
+                  "pincode": "400002",
+                  "addressType": "office",
+                  "isDefault": false
+                }
+              ]
+            }
+          }
+        }
+      },
       "addAddress": {
         "method": "POST",
         "url": "/users/addresses",
