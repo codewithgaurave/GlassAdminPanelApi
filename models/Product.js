@@ -18,6 +18,20 @@ const addOnSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const specificationSchema = new mongoose.Schema(
+  {
+    brand: { type: String, default: "" },
+    warranty: { type: String, default: "" },
+    weight: { type: String, default: "" },
+    frameType: { type: String, default: "" },
+    material: { type: String, default: "" },
+    dimensions: { type: String, default: "" },
+    installation: { type: String, default: "" },
+    glassType: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -42,6 +56,9 @@ const productSchema = new mongoose.Schema(
 
     description: { type: String, default: "" },
     about: { type: String, default: "" },
+
+    specifications: { type: specificationSchema, default: () => ({}) },
+    features: [{ type: String, trim: true }],
 
     isActive: { type: Boolean, default: true },
   },

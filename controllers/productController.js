@@ -32,6 +32,8 @@ export const createProduct = async (req, res) => {
       description,
       about,
       categoryId,
+      specifications,
+      features,
     } = req.body;
 
     if (!name || !price || !categoryId) {
@@ -60,6 +62,12 @@ export const createProduct = async (req, res) => {
     const parsedSizes = parseMaybeJSON(sizes, []);
     const parsedColors = parseMaybeJSON(colors, []);
     const parsedAddOns = parseMaybeJSON(addOns, []);
+    const parsedFeatures = parseMaybeJSON(features, []);
+    const parsedSpecifications = specifications
+      ? typeof specifications === "string"
+        ? JSON.parse(specifications)
+        : specifications
+      : {};
 
     const product = await Product.create({
       name,
@@ -76,6 +84,8 @@ export const createProduct = async (req, res) => {
       addOns: parsedAddOns,
       description,
       about,
+      specifications: parsedSpecifications,
+      features: parsedFeatures,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -138,6 +148,8 @@ export const updateProduct = async (req, res) => {
       about,
       categoryId,
       isActive,
+      specifications,
+      features,
     } = req.body;
 
     if (name) {
@@ -169,6 +181,14 @@ export const updateProduct = async (req, res) => {
     if (description !== undefined) product.description = description;
     if (about !== undefined) product.about = about;
     if (isActive !== undefined) product.isActive = !!isActive;
+
+    if (specifications) {
+      product.specifications =
+        typeof specifications === "string"
+          ? JSON.parse(specifications)
+          : specifications;
+    }
+    if (features) product.features = parseMaybeJSON(features, []);
 
     if (req.files?.mainImage?.[0]) {
       await cloudinary.uploader.destroy(product.mainImage.publicId);
