@@ -63,11 +63,10 @@ export const createProduct = async (req, res) => {
     const parsedColors = parseMaybeJSON(colors, []);
     const parsedAddOns = parseMaybeJSON(addOns, []);
     const parsedFeatures = parseMaybeJSON(features, []);
-    const parsedSpecifications = specifications
-      ? typeof specifications === "string"
+    const parsedSpecifications =
+      specifications && typeof specifications === "string"
         ? JSON.parse(specifications)
-        : specifications
-      : {};
+        : specifications || {};
 
     const product = await Product.create({
       name,
@@ -182,7 +181,7 @@ export const updateProduct = async (req, res) => {
     if (about !== undefined) product.about = about;
     if (isActive !== undefined) product.isActive = !!isActive;
 
-    if (specifications) {
+    if (specifications !== undefined) {
       product.specifications =
         typeof specifications === "string"
           ? JSON.parse(specifications)

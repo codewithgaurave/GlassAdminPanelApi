@@ -20,14 +20,14 @@ const addOnSchema = new mongoose.Schema(
 
 const specificationSchema = new mongoose.Schema(
   {
-    brand: { type: String, default: "" },
-    warranty: { type: String, default: "" },
-    weight: { type: String, default: "" },
-    frameType: { type: String, default: "" },
-    material: { type: String, default: "" },
-    dimensions: { type: String, default: "" },
-    installation: { type: String, default: "" },
-    glassType: { type: String, default: "" },
+    brand: { type: String, default: "", trim: true },
+    warranty: { type: String, default: "", trim: true },
+    weight: { type: String, default: "", trim: true },
+    frameType: { type: String, default: "", trim: true },
+    material: { type: String, default: "", trim: true },
+    dimensions: { type: String, default: "", trim: true },
+    installation: { type: String, default: "", trim: true },
+    glassType: { type: String, default: "", trim: true },
   },
   { _id: false }
 );
