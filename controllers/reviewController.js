@@ -31,7 +31,7 @@ export const getProductReviews = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    constReviews = await Review.find({ productId, isApproved: true }).sort({ createdAt: -1 });
+    // Fetch reviews
     
     // Calculate average rating
     const reviews = await Review.find({ productId, isApproved: true }).sort({ createdAt: -1 });
