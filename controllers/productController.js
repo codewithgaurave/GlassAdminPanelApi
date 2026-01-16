@@ -151,6 +151,10 @@ export const updateProduct = async (req, res) => {
       features,
     } = req.body;
 
+    console.log("👉 updateProduct called for:", idOrSlug);
+    console.log("👉 req.body.specifications:", specifications);
+    console.log("👉 req.body.features:", features);
+
     if (name) {
       product.name = name;
       product.slug =
