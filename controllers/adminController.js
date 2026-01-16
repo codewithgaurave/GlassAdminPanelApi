@@ -7,7 +7,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || "12", 10);
 
-// helper
+////////// helper
+
 const signJwt = (admin) =>
   jwt.sign(
     { sub: String(admin._id), adminId: admin.adminId, tv: admin.tokenVersion },
@@ -17,7 +18,7 @@ const signJwt = (admin) =>
     }
   );
 
-// Create Admin
+//////////   Create Admin
 export const createAdmin = async (req, res) => {
   try {
     const { adminId, password, name } = req.body;
