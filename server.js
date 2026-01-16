@@ -5,7 +5,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import moment from "moment-timezone";
 
@@ -32,10 +31,11 @@ const app = express();
 /* -------------------- SECURITY -------------------- */
 app.use(
   helmet({
-    contentSecurityPolicy: false, // ⚠️ Cloudinary / frontend safe
+    contentSecurityPolicy: false,
   })
 );
 
+/* -------------------- CORS (FINAL & SAFE) -------------------- */
 const allowedOrigins = [
   "https://espejo-kappa.vercel.app",
   "http://localhost:5173",
@@ -50,19 +50,20 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true,
+    credentials: false, // ❌ NO cookies
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 204, // 🔥 VERY IMPORTANT
+    optionsSuccessStatus: 204,
   })
 );
 
+// 🔥 IMPORTANT: allow OPTIONS globally
 app.options("*", cors());
+
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(cookieParser());
 
 /* -------------------- RATE LIMIT -------------------- */
 const authLimiter = rateLimit({
