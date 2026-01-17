@@ -63,4 +63,29 @@ const sliderMulter = multer({
 });
 const uploadSliderImage = sliderMulter.single("image");
 
-export { cloudinary, uploadProductImages, uploadSliderImage };
+// CATEGORY IMAGE
+const categoryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "glassecommerce_categories",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    resource_type: "image",
+  },
+});
+const categoryMulter = multer({
+  storage: categoryStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (allowed.includes(file.mimetype)) return cb(null, true);
+    cb(new Error("Invalid file type"), false);
+  },
+});
+const uploadCategoryImage = categoryMulter.single("image");
+
+export {
+  cloudinary,
+  uploadProductImages,
+  uploadSliderImage,
+  uploadCategoryImage,
+};

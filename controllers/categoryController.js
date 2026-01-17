@@ -1,6 +1,7 @@
-// controllers/categoryController.js
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
+import { cloudinary } from "../config/cloudinary.js";
+import mongoose from "mongoose";
 
 export const createCategory = async (req, res) => {
   try {
@@ -10,7 +11,11 @@ export const createCategory = async (req, res) => {
     const exists = await Category.findOne({ name });
     if (exists) return res.status(409).json({ message: "Category exists" });
 
-    const category = await Category.create({ name, description });
+    const category = await Category.create({ 
+      name, 
+      description,
+      image: req.file ? { url: req.file.path, publicId: req.file.filename } : { url: "", publicId: "" }
+    });
     res.status(201).json({ message: "Category created", category });
   } catch (err) {
     console.error("createCategory error:", err);
@@ -33,9 +38,14 @@ export const listCategories = async (_req, res) => {
 export const getCategory = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
-    const category =
-      (await Category.findOne({ slug: idOrSlug })) ||
-      (await Category.findById(idOrSlug));
+    let query = { slug: idOrSlug };
+
+    // Check if idOrSlug is a valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+      query = { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] };
+    }
+
+    const category = await Category.findOne(query);
     if (!category) return res.status(404).json({ message: "Not found" });
     res.json({ category });
   } catch (err) {
@@ -47,9 +57,11 @@ export const getCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
-    let category =
-      (await Category.findOne({ slug: idOrSlug })) ||
-      (await Category.findById(idOrSlug));
+    let query = { slug: idOrSlug };
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+      query = { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] };
+    }
+    const category = await Category.findOne(query);
     if (!category) return res.status(404).json({ message: "Not found" });
 
     const { name, description, isActive } = req.body;
@@ -63,7 +75,16 @@ export const updateCategory = async (req, res) => {
           .replace(/(^-|-$)+/g, "") + "-" + Date.now();
     }
     if (description !== undefined) category.description = description;
-    if (isActive !== undefined) category.isActive = !!isActive;
+    if (isActive !== undefined) {
+      category.isActive = isActive === "true" || isActive === true;
+    }
+
+    if (req.file) {
+      if (category.image && category.image.publicId) {
+        await cloudinary.uploader.destroy(category.image.publicId);
+      }
+      category.image = { url: req.file.path, publicId: req.file.filename };
+    }
 
     await category.save();
     res.json({ message: "Category updated", category });
@@ -76,9 +97,11 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
-    let category =
-      (await Category.findOne({ slug: idOrSlug })) ||
-      (await Category.findById(idOrSlug));
+    let query = { slug: idOrSlug };
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+      query = { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] };
+    }
+    const category = await Category.findOne(query);
     if (!category) return res.status(404).json({ message: "Not found" });
 
     const productCount = await Product.countDocuments({
@@ -88,6 +111,10 @@ export const deleteCategory = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Category has products, cannot delete" });
+    }
+
+    if (category.image && category.image.publicId) {
+      await cloudinary.uploader.destroy(category.image.publicId);
     }
 
     await Category.deleteOne({ _id: category._id });
