@@ -29,12 +29,20 @@ import userOrderRoutes from "./routes/userOrderRoutes.js";
 const app = express();
 
 app.use(helmet());
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://espejo-kappa.vercel.app"
+  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
+
+// 🔥 VERY IMPORTANT
+app.options("*", cors());
+
 app.use(morgan("dev"));
 
 app.use(express.json({ limit: "10mb" }));
