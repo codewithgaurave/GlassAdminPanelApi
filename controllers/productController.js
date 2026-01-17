@@ -65,10 +65,8 @@ export const createProduct = async (req, res) => {
     const parsedColors = parseMaybeJSON(colors, []);
     const parsedAddOns = parseMaybeJSON(addOns, []);
     const parsedFeatures = parseMaybeJSON(features, []);
-    const parsedSpecifications =
-      specifications && typeof specifications === "string"
-        ? JSON.parse(specifications)
-        : specifications || {};
+    const parsedSpecifications = parseMaybeJSON(specifications, {});
+    const parsedIsActive = isActive === "false" ? false : !!isActive;
 
     const product = await Product.create({
       name,
@@ -88,6 +86,7 @@ export const createProduct = async (req, res) => {
       specifications: parsedSpecifications,
       features: parsedFeatures,
       offer: offerId || null,
+      isActive: parsedIsActive,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -256,15 +255,17 @@ export const updateProduct = async (req, res) => {
     if (addOns) product.addOns = parseMaybeJSON(addOns, []);
     if (description !== undefined) product.description = description;
     if (about !== undefined) product.about = about;
-    if (isActive !== undefined) product.isActive = !!isActive;
+    
+    if (isActive !== undefined) {
+      product.isActive = isActive === "true" || isActive === true;
+    }
 
     if (specifications !== undefined) {
-      product.specifications =
-        typeof specifications === "string"
-          ? JSON.parse(specifications)
-          : specifications;
+      product.specifications = parseMaybeJSON(specifications, {});
     }
-    if (features) product.features = parseMaybeJSON(features, []);
+    if (features !== undefined) {
+      product.features = parseMaybeJSON(features, []);
+    }
     
     // offerId handling for update
     if (offerId !== undefined) {
