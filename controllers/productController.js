@@ -4,9 +4,14 @@ import Category from "../models/Category.js";
 import Review from "../models/Review.js";
 import { cloudinary } from "../config/cloudinary.js";
 
+/* ================= UTIL ================= */
+
 const parseMaybeJSON = (value, fallback) => {
-  if (!value) return fallback;
+  if (value === undefined || value === null) return fallback;
   if (Array.isArray(value)) return value;
+
+  if (typeof value === "object") return value;
+
   try {
     return JSON.parse(value);
   } catch {
@@ -20,7 +25,8 @@ const parseMaybeJSON = (value, fallback) => {
   }
 };
 
-// CREATE
+/* ================= CREATE ================= */
+
 export const createProduct = async (req, res) => {
   try {
     const {
@@ -36,6 +42,7 @@ export const createProduct = async (req, res) => {
       specifications,
       features,
       offerId,
+      isActive,
     } = req.body;
 
     if (!name || !price || !categoryId) {
@@ -49,24 +56,12 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Invalid categoryId" });
     }
 
-    if (!req.files || !req.files.mainImage || !req.files.mainImage[0]) {
+    if (!req.files?.mainImage?.[0]) {
       return res.status(400).json({ message: "mainImage is required" });
     }
 
     const mainImageFile = req.files.mainImage[0];
     const galleryFiles = req.files.galleryImages || [];
-
-    const galleryImages = galleryFiles.map((file) => ({
-      url: file.path,
-      publicId: file.filename,
-    }));
-
-    const parsedSizes = parseMaybeJSON(sizes, []);
-    const parsedColors = parseMaybeJSON(colors, []);
-    const parsedAddOns = parseMaybeJSON(addOns, []);
-    const parsedFeatures = parseMaybeJSON(features, []);
-    const parsedSpecifications = parseMaybeJSON(specifications, {});
-    const parsedIsActive = isActive === "false" ? false : !!isActive;
 
     const product = await Product.create({
       name,
@@ -77,16 +72,19 @@ export const createProduct = async (req, res) => {
         url: mainImageFile.path,
         publicId: mainImageFile.filename,
       },
-      galleryImages,
-      sizes: parsedSizes,
-      colors: parsedColors,
-      addOns: parsedAddOns,
+      galleryImages: galleryFiles.map((file) => ({
+        url: file.path,
+        publicId: file.filename,
+      })),
+      sizes: parseMaybeJSON(sizes, []),
+      colors: parseMaybeJSON(colors, []),
+      addOns: parseMaybeJSON(addOns, []),
       description,
       about,
-      specifications: parsedSpecifications,
-      features: parsedFeatures,
+      specifications: parseMaybeJSON(specifications, {}),
+      features: parseMaybeJSON(features, []),
       offer: offerId || null,
-      isActive: parsedIsActive,
+      isActive: isActive === "false" ? false : true,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -96,65 +94,32 @@ export const createProduct = async (req, res) => {
   }
 };
 
-// LIST
+/* ================= LIST ================= */
+
 export const listProducts = async (_req, res) => {
   try {
     const products = await Product.aggregate([
       { $match: { isActive: true } },
-      
-      // Lookup Reviews
       {
         $lookup: {
           from: "reviews",
           localField: "_id",
           foreignField: "productId",
-          as: "reviewData"
-        }
+          as: "reviewData",
+        },
       },
-      // Calculate Rating Stats
       {
         $addFields: {
-          averageRating: { $ifNull: [ { $round: [{ $avg: "$reviewData.rating" }, 1] }, 0 ] },
-          totalReviews: { $size: "$reviewData" }
-        }
+          averageRating: {
+            $ifNull: [{ $round: [{ $avg: "$reviewData.rating" }, 1] }, 0],
+          },
+          totalReviews: { $size: "$reviewData" },
+        },
       },
-      // Remove reviewData to keep payload light
       { $project: { reviewData: 0 } },
-
-      // Populate Category
-      {
-        $lookup: {
-          from: "categories",
-          localField: "category",
-          foreignField: "_id",
-          as: "categoryDoc"
-        }
-      },
-      { 
-        $addFields: { 
-          category: { $arrayElemAt: ["$categoryDoc", 0] } 
-        } 
-      },
-      { $project: { categoryDoc: 0 } },
-
-      // Populate Offer
-      {
-        $lookup: {
-          from: "offers",
-          localField: "offer",
-          foreignField: "_id",
-          as: "offerDoc"
-        }
-      },
-      { 
-        $addFields: { 
-          offer: { $arrayElemAt: ["$offerDoc", 0] } 
-        } 
-      },
-      { $project: { offerDoc: 0 } },
-
-      { $sort: { createdAt: -1 } }
+      { $sort: { createdAt: -1 } },
     ]);
+
     res.json({ products });
   } catch (err) {
     console.error("listProducts error:", err);
@@ -162,50 +127,57 @@ export const listProducts = async (_req, res) => {
   }
 };
 
-// GET ONE
+/* ================= GET ONE ================= */
+
 export const getProduct = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
-    let product =
+
+    const product =
       (await Product.findOne({ slug: idOrSlug })
         .populate("category", "name slug")
         .populate("offer")) ||
       (await Product.findById(idOrSlug)
         .populate("category", "name slug")
         .populate("offer"));
-        
-    if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // Calculate Rating dynamically
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
     const reviews = await Review.find({ productId: product._id });
     const totalReviews = reviews.length;
-    const avg = totalReviews > 0
+    const avg =
+      totalReviews > 0
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
         : 0;
-    const averageRating = Number(avg.toFixed(1));
 
-    // Convert to object and append stats
-    const productData = product.toObject();
-    productData.averageRating = averageRating;
-    productData.totalReviews = totalReviews;
-
-    res.json({ product: productData });
+    res.json({
+      product: {
+        ...product.toObject(),
+        averageRating: Number(avg.toFixed(1)),
+        totalReviews,
+      },
+    });
   } catch (err) {
     console.error("getProduct error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// UPDATE
+/* ================= UPDATE ================= */
+
 export const updateProduct = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
 
-    let product =
+    const product =
       (await Product.findOne({ slug: idOrSlug })) ||
       (await Product.findById(idOrSlug));
 
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     const {
       name,
@@ -223,54 +195,45 @@ export const updateProduct = async (req, res) => {
       offerId,
     } = req.body;
 
-    console.log("👉 updateProduct called for:", idOrSlug);
-    console.log("👉 req.body.specifications:", specifications);
-    console.log("👉 req.body.features:", features);
+    // 🔥 SAFE UPDATES (JSON OR FORM DATA)
 
-    if (name) {
-      product.name = name;
-      product.slug =
-        name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)+/g, "") +
-        "-" +
-        Date.now();
-    }
-
-    if (price) product.price = Number(price);
+    if (name) product.name = name;
+    if (price !== undefined) product.price = Number(price);
     if (discountPercent !== undefined)
       product.discountPercent = Number(discountPercent);
 
     if (categoryId) {
       const category = await Category.findById(categoryId);
-      if (!category) {
+      if (!category)
         return res.status(400).json({ message: "Invalid categoryId" });
-      }
       product.category = category._id;
     }
 
-    if (sizes) product.sizes = parseMaybeJSON(sizes, []);
-    if (colors) product.colors = parseMaybeJSON(colors, []);
-    if (addOns) product.addOns = parseMaybeJSON(addOns, []);
+    if (sizes !== undefined)
+      product.sizes = parseMaybeJSON(sizes, product.sizes);
+    if (colors !== undefined)
+      product.colors = parseMaybeJSON(colors, product.colors);
+    if (addOns !== undefined)
+      product.addOns = parseMaybeJSON(addOns, product.addOns);
+
     if (description !== undefined) product.description = description;
     if (about !== undefined) product.about = about;
-    
-    if (isActive !== undefined) {
-      product.isActive = isActive === "true" || isActive === true;
-    }
 
-    if (specifications !== undefined) {
-      product.specifications = parseMaybeJSON(specifications, {});
-    }
-    if (features !== undefined) {
-      product.features = parseMaybeJSON(features, []);
-    }
-    
-    // offerId handling for update
-    if (offerId !== undefined) {
-      product.offer = offerId || null;
-    }
+    if (isActive !== undefined)
+      product.isActive = isActive === true || isActive === "true";
+
+    if (specifications !== undefined)
+      product.specifications = parseMaybeJSON(
+        specifications,
+        product.specifications
+      );
+
+    if (features !== undefined)
+      product.features = parseMaybeJSON(features, product.features);
+
+    if (offerId !== undefined) product.offer = offerId || null;
+
+    /* ===== IMAGE UPDATE ===== */
 
     if (req.files?.mainImage?.[0]) {
       await cloudinary.uploader.destroy(product.mainImage.publicId);
@@ -278,12 +241,11 @@ export const updateProduct = async (req, res) => {
       product.mainImage = { url: file.path, publicId: file.filename };
     }
 
-    if (req.files?.galleryImages) {
-      for (let img of product.galleryImages) {
+    if (req.files?.galleryImages?.length) {
+      for (const img of product.galleryImages) {
         await cloudinary.uploader.destroy(img.publicId);
       }
-      const galleryFiles = req.files.galleryImages;
-      product.galleryImages = galleryFiles.map((file) => ({
+      product.galleryImages = req.files.galleryImages.map((file) => ({
         url: file.path,
         publicId: file.filename,
       }));
@@ -297,17 +259,22 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// DELETE
+/* ================= DELETE ================= */
+
 export const deleteProduct = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
-    let product =
+
+    const product =
       (await Product.findOne({ slug: idOrSlug })) ||
       (await Product.findById(idOrSlug));
-    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     await cloudinary.uploader.destroy(product.mainImage.publicId);
-    for (let img of product.galleryImages) {
+    for (const img of product.galleryImages) {
       await cloudinary.uploader.destroy(img.publicId);
     }
 
