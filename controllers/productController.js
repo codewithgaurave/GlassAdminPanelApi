@@ -1,6 +1,7 @@
 // controllers/productController.js
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
+import Review from "../models/Review.js";
 import { cloudinary } from "../config/cloudinary.js";
 
 const parseMaybeJSON = (value, fallback) => {
@@ -99,10 +100,62 @@ export const createProduct = async (req, res) => {
 // LIST
 export const listProducts = async (_req, res) => {
   try {
-    const products = await Product.find({ isActive: true })
-      .populate("category", "name slug")
-      .populate("offer")
-      .sort({ createdAt: -1 });
+    const products = await Product.aggregate([
+      { $match: { isActive: true } },
+      
+      // Lookup Reviews
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "_id",
+          foreignField: "productId",
+          as: "reviewData"
+        }
+      },
+      // Calculate Rating Stats
+      {
+        $addFields: {
+          averageRating: { $ifNull: [ { $round: [{ $avg: "$reviewData.rating" }, 1] }, 0 ] },
+          totalReviews: { $size: "$reviewData" }
+        }
+      },
+      // Remove reviewData to keep payload light
+      { $project: { reviewData: 0 } },
+
+      // Populate Category
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryDoc"
+        }
+      },
+      { 
+        $addFields: { 
+          category: { $arrayElemAt: ["$categoryDoc", 0] } 
+        } 
+      },
+      { $project: { categoryDoc: 0 } },
+
+      // Populate Offer
+      {
+        $lookup: {
+          from: "offers",
+          localField: "offer",
+          foreignField: "_id",
+          as: "offerDoc"
+        }
+      },
+      { 
+        $addFields: { 
+          offer: { $arrayElemAt: ["$offerDoc", 0] } 
+        } 
+      },
+      { $project: { offerDoc: 0 } },
+
+      { $sort: { createdAt: -1 } }
+    ]);
     res.json({ products });
   } catch (err) {
     console.error("listProducts error:", err);
@@ -121,8 +174,23 @@ export const getProduct = async (req, res) => {
       (await Product.findById(idOrSlug)
         .populate("category", "name slug")
         .populate("offer"));
+        
     if (!product) return res.status(404).json({ message: "Product not found" });
-    res.json({ product });
+
+    // Calculate Rating dynamically
+    const reviews = await Review.find({ productId: product._id });
+    const totalReviews = reviews.length;
+    const avg = totalReviews > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
+    const averageRating = Number(avg.toFixed(1));
+
+    // Convert to object and append stats
+    const productData = product.toObject();
+    productData.averageRating = averageRating;
+    productData.totalReviews = totalReviews;
+
+    res.json({ product: productData });
   } catch (err) {
     console.error("getProduct error:", err);
     res.status(500).json({ message: "Server error" });
