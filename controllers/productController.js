@@ -34,6 +34,7 @@ export const createProduct = async (req, res) => {
       categoryId,
       specifications,
       features,
+      offerId,
     } = req.body;
 
     if (!name || !price || !categoryId) {
@@ -85,6 +86,7 @@ export const createProduct = async (req, res) => {
       about,
       specifications: parsedSpecifications,
       features: parsedFeatures,
+      offer: offerId || null,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -99,6 +101,7 @@ export const listProducts = async (_req, res) => {
   try {
     const products = await Product.find({ isActive: true })
       .populate("category", "name slug")
+      .populate("offer")
       .sort({ createdAt: -1 });
     res.json({ products });
   } catch (err) {
@@ -112,11 +115,12 @@ export const getProduct = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
     let product =
-      (await Product.findOne({ slug: idOrSlug }).populate(
-        "category",
-        "name slug"
-      )) ||
-      (await Product.findById(idOrSlug).populate("category", "name slug"));
+      (await Product.findOne({ slug: idOrSlug })
+        .populate("category", "name slug")
+        .populate("offer")) ||
+      (await Product.findById(idOrSlug)
+        .populate("category", "name slug")
+        .populate("offer"));
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json({ product });
   } catch (err) {
@@ -149,6 +153,7 @@ export const updateProduct = async (req, res) => {
       isActive,
       specifications,
       features,
+      offerId,
     } = req.body;
 
     console.log("👉 updateProduct called for:", idOrSlug);
@@ -192,6 +197,11 @@ export const updateProduct = async (req, res) => {
           : specifications;
     }
     if (features) product.features = parseMaybeJSON(features, []);
+    
+    // offerId handling for update
+    if (offerId !== undefined) {
+      product.offer = offerId || null;
+    }
 
     if (req.files?.mainImage?.[0]) {
       await cloudinary.uploader.destroy(product.mainImage.publicId);
