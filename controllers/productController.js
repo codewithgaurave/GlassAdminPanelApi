@@ -96,10 +96,15 @@ export const createProduct = async (req, res) => {
 
 /* ================= LIST ================= */
 
-export const listProducts = async (_req, res) => {
+export const listProducts = async (req, res) => {
   try {
+    const { isAdmin } = req.query;
+    
+    // If isAdmin=true, show all products. Otherwise show only active.
+    const matchStage = isAdmin === "true" ? {} : { isActive: true };
+
     const products = await Product.aggregate([
-      { $match: { isActive: true } },
+      { $match: matchStage },
       {
         $lookup: {
           from: "reviews",
@@ -109,14 +114,50 @@ export const listProducts = async (_req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryDoc",
+        },
+      },
+      {
+        $lookup: {
+          from: "offers",
+          localField: "offer",
+          foreignField: "_id",
+          as: "offerDoc",
+        },
+      },
+      {
+        $unwind: {
+          path: "$categoryDoc",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$offerDoc",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $addFields: {
           averageRating: {
             $ifNull: [{ $round: [{ $avg: "$reviewData.rating" }, 1] }, 0],
           },
           totalReviews: { $size: "$reviewData" },
+          category: "$categoryDoc",
+          offer: "$offerDoc",
         },
       },
-      { $project: { reviewData: 0 } },
+      { 
+        $project: { 
+            reviewData: 0, 
+            categoryDoc: 0, 
+            offerDoc: 0 
+        } 
+      },
       { $sort: { createdAt: -1 } },
     ]);
 

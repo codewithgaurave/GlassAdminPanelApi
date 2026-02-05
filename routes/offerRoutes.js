@@ -15,7 +15,7 @@ const router = express.Router();
 router.get("/code/:code", getOfferByCode);
 
 // admin
-router.get("/", requireAuth, listOffers);
+router.get("/", listOffers);
 router.post("/", requireAuth, createOffer);
 router.put("/:id", requireAuth, updateOffer);
 router.delete("/:id", requireAuth, deleteOffer);
