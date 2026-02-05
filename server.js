@@ -48,7 +48,9 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://espejo-kappa.vercel.app",
-  "https://admin.espejo.in"
+  "https://admin.espejo.in",
+  "https://www.espejo.in",
+  "https://espejo.in"
 ];
 
 app.use(cors({
