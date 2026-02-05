@@ -41,7 +41,7 @@ app.use(cors({
 }));
 
 // 🔥 VERY IMPORTANT
-app.options("*", cors());
+app.options("(.*)", cors());
 
 app.use(morgan("dev"));
 
@@ -60,7 +60,7 @@ app.use("/api/users/register", authLimiter);
 
 // 🟢 DB Connect (with India timezone logging)
 await connectDB();
-console.log("⏳ Timezone:", moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A"));
+console.log(" Timezone:", moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A"));
 
 // Routes
 app.use("/api/admin", adminRoutes);
