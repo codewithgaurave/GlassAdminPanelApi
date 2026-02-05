@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import connectDB from "./config/db.js";
 import moment from "moment-timezone";
 
+/// Admin & Product routes
 import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -28,7 +29,10 @@ import userOrderRoutes from "./routes/userOrderRoutes.js";
 
 const app = express();
 
+// Security middlewares
 app.use(helmet());
+
+/// CORS (OPTIONS automatically handled here)
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -40,14 +44,13 @@ app.use(cors({
   credentials: true,
 }));
 
-// 🔥 VERY IMPORTANT
-app.options("(.*)", cors());
+// ❌ REMOVED app.options("*", cors());  <-- THIS WAS THE CRASH REASON
 
 app.use(morgan("dev"));
-
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// Rate limiter for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -58,11 +61,14 @@ app.use("/api/user/login", authLimiter);
 app.use("/api/users/login", authLimiter);
 app.use("/api/users/register", authLimiter);
 
-// 🟢 DB Connect (with India timezone logging)
+// DB connect
 await connectDB();
-console.log(" Timezone:", moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A"));
+console.log(
+  "Timezone:",
+  moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A")
+);
 
-// Routes
+// API routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -79,32 +85,36 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/user-orders", userOrderRoutes); 
+app.use("/api/user-orders", userOrderRoutes);
 
-// Default
-app.get("/", (_req, res) => res.send("✅ API is running..."));
+// Root
+app.get("/", (_req, res) => {
+  res.send(" API is running...");
+});
 
-// Health check time in IST
-app.get("/health", (_req, res) =>
+// Health check
+app.get("/health", (_req, res) => {
   res.json({
     status: "OK",
     timeIST: moment().tz("Asia/Kolkata").format("DD-MM-YYYY hh:mm:ss A"),
-  })
-);
+  });
+});
 
-// 404 Handler
-app.use((req, res) =>
+// 404 handler
+app.use((req, res) => {
   res.status(404).json({
     message: `Route not found: ${req.method} ${req.originalUrl}`,
-  })
-);
+  });
+});
 
-// Error Handler
+// Global error handler
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: "Internal server error" });
 });
 
-// Server
+///// Server //////
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server on :${PORT}`));
+app.listen(PORT, () =>
+  console.log(` Server running on port ${PORT}`)
+);
