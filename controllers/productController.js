@@ -37,12 +37,12 @@ export const createProduct = async (req, res) => {
       colors,
       addOns,
       description,
-      about,
       categoryId,
       specifications,
       features,
       offerId,
       isActive,
+      isBestSeller,
     } = req.body;
 
     if (!name || !price || !categoryId) {
@@ -80,11 +80,11 @@ export const createProduct = async (req, res) => {
       colors: parseMaybeJSON(colors, []),
       addOns: parseMaybeJSON(addOns, []),
       description,
-      about,
       specifications: parseMaybeJSON(specifications, {}),
       features: parseMaybeJSON(features, []),
       offer: offerId || null,
       isActive: isActive === "false" ? false : true,
+      isBestSeller: isBestSeller === "true" || isBestSeller === true ? true : false,
     });
 
     res.status(201).json({ message: "Product created", product });
@@ -228,9 +228,9 @@ export const updateProduct = async (req, res) => {
       colors,
       addOns,
       description,
-      about,
       categoryId,
       isActive,
+      isBestSeller,
       specifications,
       features,
       offerId,
@@ -258,10 +258,12 @@ export const updateProduct = async (req, res) => {
       product.addOns = parseMaybeJSON(addOns, product.addOns);
 
     if (description !== undefined) product.description = description;
-    if (about !== undefined) product.about = about;
 
     if (isActive !== undefined)
       product.isActive = isActive === true || isActive === "true";
+
+    if (isBestSeller !== undefined)
+      product.isBestSeller = isBestSeller === true || isBestSeller === "true";
 
     if (specifications !== undefined)
       product.specifications = parseMaybeJSON(

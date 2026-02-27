@@ -1,0 +1,60 @@
+﻿node : node:internal/modules/
+package_json_reader:255
+At line:1 char:1
++ node server.js > out.log 
+2>&1
++ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (node:in  
+  ternal/m...json_reader:2   
+ 55:String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+  throw new ERR_MODULE_NOT_FO
+UND(packageName, 
+fileURLToPath(base), null);
+        ^
+
+Error 
+[ERR_MODULE_NOT_FOUND]: 
+Cannot find package 'dotenv' 
+imported from D:\Desktop\Espe
+jo\GlassAdminPanelApi\server.
+js
+    at 
+Object.getPackageJSONURL (nod
+e:internal/modules/package_js
+on_reader:255:9)
+    at packageResolve (node:i
+nternal/modules/esm/resolve:7
+67:81)
+    at moduleResolve (node:in
+ternal/modules/esm/resolve:85
+3:18)
+    at defaultResolve (node:i
+nternal/modules/esm/resolve:9
+83:11)
+    at 
+ModuleLoader.defaultResolve (
+node:internal/modules/esm/loa
+der:783:12)
+    at #cachedDefaultResolve 
+(node:internal/modules/esm/lo
+ader:707:25)
+    at ModuleLoader.resolve (
+node:internal/modules/esm/loa
+der:690:38)
+    at ModuleLoader.getModule
+JobForImport (node:internal/m
+odules/esm/loader:307:38)
+    at ModuleJob._link (node:
+internal/modules/esm/module_j
+ob:183:49) {
+  code: 
+'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.18.0

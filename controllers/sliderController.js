@@ -19,15 +19,20 @@ export const createSlider = async (req, res) => {
 
     res.status(201).json({ message: "Slider created", slider });
   } catch (err) {
-    console.error("createSlider error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("createSlider error details:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 };
 
 export const listActiveSliders = async (_req, res) => {
   try {
-    const sliders = await Slider.find({ isActive: true })
-      .sort({ sortOrder: 1, createdAt: -1 });
+    const sliders = await Slider.find({ isActive: true }).sort({
+      sortOrder: 1,
+      createdAt: -1,
+    });
     res.json({ sliders });
   } catch (err) {
     console.error("listActiveSliders error:", err);
@@ -58,19 +63,32 @@ export const updateSlider = async (req, res) => {
     if (subtitle !== undefined) slider.subtitle = subtitle;
     if (buttonText !== undefined) slider.buttonText = buttonText;
     if (linkUrl !== undefined) slider.linkUrl = linkUrl;
-    if (isActive !== undefined) slider.isActive = !!isActive;
-    if (sortOrder !== undefined) slider.sortOrder = Number(sortOrder);
+
+    if (isActive !== undefined) {
+      slider.isActive = isActive === "true" || isActive === true;
+    }
+
+    if (sortOrder !== undefined) {
+      slider.sortOrder = Number(sortOrder);
+    }
 
     if (req.file) {
-      await cloudinary.uploader.destroy(slider.image.publicId);
+      // delete old image from cloudinary
+      if (slider.image && slider.image.publicId) {
+        await cloudinary.uploader.destroy(slider.image.publicId);
+      }
+      // set new image
       slider.image = { url: req.file.path, publicId: req.file.filename };
     }
 
     await slider.save();
     res.json({ message: "Slider updated", slider });
   } catch (err) {
-    console.error("updateSlider error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("updateSlider error details:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 };
 
@@ -80,7 +98,11 @@ export const deleteSlider = async (req, res) => {
     const slider = await Slider.findById(id);
     if (!slider) return res.status(404).json({ message: "Slider not found" });
 
-    await cloudinary.uploader.destroy(slider.image.publicId);
+    // delete image from cloudinary
+    if (slider.image && slider.image.publicId) {
+      await cloudinary.uploader.destroy(slider.image.publicId);
+    }
+
     await Slider.deleteOne({ _id: slider._id });
 
     res.json({ message: "Slider deleted" });

@@ -46,7 +46,13 @@ app.use(helmet());
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
   "http://localhost:3000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175",
+  "http://127.0.0.1:3000",
   "https://espejo-kappa.vercel.app",
   "https://admin.espejo.in",
   "https://www.espejo.in",
@@ -61,6 +67,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn("CORS blocked origin:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
@@ -136,7 +143,11 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
-  res.status(500).json({ message: "Internal server error" });
+  res.status(500).json({
+    message: "Internal server error",
+    error: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
 });
 
 ///// Server //////
