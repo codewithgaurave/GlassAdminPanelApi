@@ -43,6 +43,7 @@ export const placeOrder = async (req, res) => {
       orderItems.push({
         product: item.product._id,
         productName: item.product.name,
+        productImage: item.product.mainImage?.url || "",
         productPrice: itemPrice,
         quantity: item.quantity,
         size: item.size,
